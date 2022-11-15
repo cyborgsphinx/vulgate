@@ -83,3 +83,13 @@ impl<'a, T> Propagate for Multiplier<'a, T> where T: Mul<T, Output=T> + Div<T, O
         }
     }
 }
+
+#[macro_export]
+macro_rules! multiplier {
+    ($a1:ident * $a2:ident = $sum:ident) => {
+        ::gensym::gensym!{ $crate::multiplier!($a1, $a2, $sum) }
+    };
+    ($guard:ident, $m1:ident, $m2:ident, $product:ident) => {
+        let $guard = $crate::multiplier::Multiplier::new(::std::rc::Rc::clone(&$m1), ::std::rc::Rc::clone(&$m2), ::std::rc::Rc::clone(&$product));
+    }
+}

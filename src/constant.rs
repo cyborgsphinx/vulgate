@@ -35,3 +35,13 @@ impl<'a, T> Propagate for Constant<'a, T> where T: Copy + Display + PartialEq + 
         // do nothing
     }
 }
+
+#[macro_export]
+macro_rules! constant {
+    ($i:ident <- $e:expr) => {
+        ::gensym::gensym!{ $crate::constant!($i, $e) }
+    };
+    ($guard:ident, $i:ident, $e:expr) => {
+        let $guard = $crate::constant::Constant::new($e, ::std::rc::Rc::clone(&$i));
+    }
+}

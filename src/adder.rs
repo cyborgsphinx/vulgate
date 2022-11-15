@@ -80,3 +80,13 @@ impl<'a, T> Propagate for Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output
         }
     }
 }
+
+#[macro_export]
+macro_rules! adder {
+    ($a1:ident + $a2:ident = $sum:ident) => {
+        ::gensym::gensym!{ $crate::adder!($a1, $a2, $sum) }
+    };
+    ($guard:ident, $a1:ident, $a2:ident, $sum:ident) => {
+        let $guard = $crate::adder::Adder::new(::std::rc::Rc::clone(&$a1), ::std::rc::Rc::clone(&$a2), ::std::rc::Rc::clone(&$sum));
+    }
+}
