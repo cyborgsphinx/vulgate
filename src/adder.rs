@@ -1,4 +1,4 @@
-use crate::propagate::{Propagate, Connector};
+use crate::propagate::{Connector, Propagate};
 
 use std::cell::RefCell;
 use std::cmp::PartialEq;
@@ -6,14 +6,24 @@ use std::fmt::Display;
 use std::ops::{Add, Sub};
 use std::rc::{Rc, Weak};
 
-pub struct Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output=T> + Copy + Display + PartialEq + 'a {
+pub struct Adder<'a, T>
+where
+    T: Add<T, Output = T> + Sub<T, Output = T> + Copy + Display + PartialEq + 'a,
+{
     a1: Weak<RefCell<Connector<'a, T>>>,
     a2: Weak<RefCell<Connector<'a, T>>>,
     sum: Weak<RefCell<Connector<'a, T>>>,
 }
 
-impl<'a, T> Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output=T> + Copy + Display + PartialEq + 'a {
-    pub fn new(a1: Rc<RefCell<Connector<'a, T>>>, a2: Rc<RefCell<Connector<'a, T>>>, sum: Rc<RefCell<Connector<'a, T>>>) -> Rc<RefCell<Self>> {
+impl<'a, T> Adder<'a, T>
+where
+    T: Add<T, Output = T> + Sub<T, Output = T> + Copy + Display + PartialEq + 'a,
+{
+    pub fn new(
+        a1: Rc<RefCell<Connector<'a, T>>>,
+        a2: Rc<RefCell<Connector<'a, T>>>,
+        sum: Rc<RefCell<Connector<'a, T>>>,
+    ) -> Rc<RefCell<Self>> {
         let this = Rc::new(RefCell::new(Self {
             a1: Rc::downgrade(&a1),
             a2: Rc::downgrade(&a2),
@@ -26,7 +36,10 @@ impl<'a, T> Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output=T> + Copy + D
     }
 }
 
-impl<'a, T> Propagate for Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output=T> + Copy + Display + PartialEq {
+impl<'a, T> Propagate for Adder<'a, T>
+where
+    T: Add<T, Output = T> + Sub<T, Output = T> + Copy + Display + PartialEq,
+{
     type Type = T;
 
     fn id(&self) -> usize {
@@ -84,9 +97,13 @@ impl<'a, T> Propagate for Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output
 #[macro_export]
 macro_rules! adder {
     ($a1:ident + $a2:ident = $sum:ident) => {
-        ::gensym::gensym!{ $crate::adder!($a1, $a2, $sum) }
+        ::gensym::gensym! { $crate::adder!($a1, $a2, $sum) }
     };
     ($guard:ident, $a1:ident, $a2:ident, $sum:ident) => {
-        let $guard = $crate::adder::Adder::new(::std::rc::Rc::clone(&$a1), ::std::rc::Rc::clone(&$a2), ::std::rc::Rc::clone(&$sum));
-    }
+        let $guard = $crate::adder::Adder::new(
+            ::std::rc::Rc::clone(&$a1),
+            ::std::rc::Rc::clone(&$a2),
+            ::std::rc::Rc::clone(&$sum),
+        );
+    };
 }

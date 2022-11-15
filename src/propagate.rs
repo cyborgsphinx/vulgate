@@ -31,7 +31,7 @@ impl<T> ConnectorState<T> {
 
 pub struct Connector<'a, T: Copy + Display + PartialEq> {
     state: RefCell<ConnectorState<T>>,
-    constraints: Vec<Rc<RefCell<dyn Propagate<Type=T> + 'a>>>,
+    constraints: Vec<Rc<RefCell<dyn Propagate<Type = T> + 'a>>>,
 }
 
 impl<'a, T: Copy + Display + PartialEq> Connector<'a, T> {
@@ -61,7 +61,11 @@ impl<'a, T: Copy + Display + PartialEq> Connector<'a, T> {
             }
         } else {
             self.state.borrow_mut().update(Some(value), Some(informer));
-            for c in self.constraints.iter().filter(|c| c.borrow().id() != informer) {
+            for c in self
+                .constraints
+                .iter()
+                .filter(|c| c.borrow().id() != informer)
+            {
                 c.borrow().update();
             }
         }
@@ -71,15 +75,26 @@ impl<'a, T: Copy + Display + PartialEq> Connector<'a, T> {
     pub fn forget_value(&self, informer: usize) {
         if Some(informer) == self.state.borrow().informant {
             self.state.borrow_mut().update(None, None);
-            for c in self.constraints.iter().filter(|c| c.borrow().id() != informer) {
+            for c in self
+                .constraints
+                .iter()
+                .filter(|c| c.borrow().id() != informer)
+            {
                 c.borrow().forget();
             }
         }
     }
 
-    pub fn connect<'b: 'a>(&mut self, constraint: Rc<RefCell<dyn Propagate<Type=T> + 'b>>) -> Result<(), String> {
+    pub fn connect<'b: 'a>(
+        &mut self,
+        constraint: Rc<RefCell<dyn Propagate<Type = T> + 'b>>,
+    ) -> Result<(), String> {
         let cons = Rc::clone(&constraint);
-        if !self.constraints.iter().any(|c| c.borrow().id() == cons.borrow().id()) {
+        if !self
+            .constraints
+            .iter()
+            .any(|c| c.borrow().id() == cons.borrow().id())
+        {
             self.constraints.push(cons);
             Ok(())
         } else {

@@ -1,5 +1,5 @@
-use vulgate::{adder, multiplier, constant};
 use vulgate::propagate::Connector;
+use vulgate::{adder, constant, multiplier};
 
 fn main() {
     let c = Connector::new();

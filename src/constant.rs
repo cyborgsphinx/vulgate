@@ -1,15 +1,21 @@
-use crate::propagate::{Propagate, Connector};
+use crate::propagate::{Connector, Propagate};
 
 use std::cell::RefCell;
 use std::cmp::PartialEq;
 use std::fmt::Display;
 use std::rc::{Rc, Weak};
 
-pub struct Constant<'a, T> where T: Copy + Display + PartialEq + 'a {
+pub struct Constant<'a, T>
+where
+    T: Copy + Display + PartialEq + 'a,
+{
     _conn: Weak<RefCell<Connector<'a, T>>>,
 }
 
-impl<'a, T> Constant<'a, T> where T: Copy + Display + PartialEq + 'a {
+impl<'a, T> Constant<'a, T>
+where
+    T: Copy + Display + PartialEq + 'a,
+{
     pub fn new(value: T, connector: Rc<RefCell<Connector<'a, T>>>) -> Rc<RefCell<Self>> {
         let this = Rc::new(RefCell::new(Self {
             _conn: Rc::downgrade(&connector),
@@ -20,7 +26,10 @@ impl<'a, T> Constant<'a, T> where T: Copy + Display + PartialEq + 'a {
     }
 }
 
-impl<'a, T> Propagate for Constant<'a, T> where T: Copy + Display + PartialEq + 'a {
+impl<'a, T> Propagate for Constant<'a, T>
+where
+    T: Copy + Display + PartialEq + 'a,
+{
     type Type = T;
 
     fn id(&self) -> usize {
@@ -39,9 +48,9 @@ impl<'a, T> Propagate for Constant<'a, T> where T: Copy + Display + PartialEq + 
 #[macro_export]
 macro_rules! constant {
     ($i:ident <- $e:expr) => {
-        ::gensym::gensym!{ $crate::constant!($i, $e) }
+        ::gensym::gensym! { $crate::constant!($i, $e) }
     };
     ($guard:ident, $i:ident, $e:expr) => {
         let $guard = $crate::constant::Constant::new($e, ::std::rc::Rc::clone(&$i));
-    }
+    };
 }

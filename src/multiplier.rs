@@ -1,20 +1,30 @@
-use crate::propagate::{Propagate, Connector};
+use crate::propagate::{Connector, Propagate};
 
 use std::cell::RefCell;
 use std::cmp::PartialEq;
 use std::convert::From;
 use std::fmt::Display;
-use std::ops::{Mul, Div};
+use std::ops::{Div, Mul};
 use std::rc::{Rc, Weak};
 
-pub struct Multiplier<'a, T> where T: Mul<T, Output=T> + Div<T, Output=T> + From<isize> + Copy + Display + PartialEq + 'a {
+pub struct Multiplier<'a, T>
+where
+    T: Mul<T, Output = T> + Div<T, Output = T> + From<isize> + Copy + Display + PartialEq + 'a,
+{
     m1: Weak<RefCell<Connector<'a, T>>>,
     m2: Weak<RefCell<Connector<'a, T>>>,
     product: Weak<RefCell<Connector<'a, T>>>,
 }
 
-impl<'a, T> Multiplier<'a, T> where T: Mul<T, Output=T> + Div<T, Output=T> + From<isize> + Copy + Display + PartialEq + 'a {
-    pub fn new(m1: Rc<RefCell<Connector<'a, T>>>, m2: Rc<RefCell<Connector<'a, T>>>, product: Rc<RefCell<Connector<'a, T>>>) -> Rc<RefCell<Self>> {
+impl<'a, T> Multiplier<'a, T>
+where
+    T: Mul<T, Output = T> + Div<T, Output = T> + From<isize> + Copy + Display + PartialEq + 'a,
+{
+    pub fn new(
+        m1: Rc<RefCell<Connector<'a, T>>>,
+        m2: Rc<RefCell<Connector<'a, T>>>,
+        product: Rc<RefCell<Connector<'a, T>>>,
+    ) -> Rc<RefCell<Self>> {
         let this = Rc::new(RefCell::new(Self {
             m1: Rc::downgrade(&m1),
             m2: Rc::downgrade(&m2),
@@ -27,7 +37,10 @@ impl<'a, T> Multiplier<'a, T> where T: Mul<T, Output=T> + Div<T, Output=T> + Fro
     }
 }
 
-impl<'a, T> Propagate for Multiplier<'a, T> where T: Mul<T, Output=T> + Div<T, Output=T> + From<isize> + Copy + Display + PartialEq {
+impl<'a, T> Propagate for Multiplier<'a, T>
+where
+    T: Mul<T, Output = T> + Div<T, Output = T> + From<isize> + Copy + Display + PartialEq,
+{
     type Type = T;
 
     fn id(&self) -> usize {
@@ -54,7 +67,9 @@ impl<'a, T> Propagate for Multiplier<'a, T> where T: Mul<T, Output=T> + Div<T, O
         let product_value = product.borrow().get_value();
         let zero: T = 0.into();
         let result = match (m1_value, m2_value, product_value) {
-            (Some(val), _, _) | (_, Some(val), _) if val == zero => product.borrow().set_value(zero, self.id()),
+            (Some(val), _, _) | (_, Some(val), _) if val == zero => {
+                product.borrow().set_value(zero, self.id())
+            }
             (Some(v1), Some(v2), None) => product.borrow().set_value(v1 * v2, self.id()),
             (Some(v1), None, Some(result)) => m2.borrow().set_value(result / v1, self.id()),
             (None, Some(v2), Some(result)) => m1.borrow().set_value(result / v2, self.id()),
@@ -87,9 +102,13 @@ impl<'a, T> Propagate for Multiplier<'a, T> where T: Mul<T, Output=T> + Div<T, O
 #[macro_export]
 macro_rules! multiplier {
     ($a1:ident * $a2:ident = $sum:ident) => {
-        ::gensym::gensym!{ $crate::multiplier!($a1, $a2, $sum) }
+        ::gensym::gensym! { $crate::multiplier!($a1, $a2, $sum) }
     };
     ($guard:ident, $m1:ident, $m2:ident, $product:ident) => {
-        let $guard = $crate::multiplier::Multiplier::new(::std::rc::Rc::clone(&$m1), ::std::rc::Rc::clone(&$m2), ::std::rc::Rc::clone(&$product));
-    }
+        let $guard = $crate::multiplier::Multiplier::new(
+            ::std::rc::Rc::clone(&$m1),
+            ::std::rc::Rc::clone(&$m2),
+            ::std::rc::Rc::clone(&$product),
+        );
+    };
 }
