@@ -55,7 +55,7 @@ impl<'a, T> Propagate for Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output
             (Some(v1), Some(v2), None) => sum.borrow().set_value(v1 + v2, self.id()),
             (Some(v1), None, Some(total)) => a2.borrow().set_value(total - v1, self.id()),
             (None, Some(v2), Some(total)) => a1.borrow().set_value(total - v2, self.id()),
-            (..) => Ok(()),
+            _ => Ok(()),
         };
         if let Err(msg) = result {
             println!("{msg}");
