@@ -4,20 +4,20 @@ use std::cell::RefCell;
 use std::cmp::PartialEq;
 use std::fmt::Display;
 use std::ops::{Add, Sub};
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 pub struct Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output=T> + Copy + Display + PartialEq + 'a {
-    a1: Rc<RefCell<Connector<'a, T>>>,
-    a2: Rc<RefCell<Connector<'a, T>>>,
-    sum: Rc<RefCell<Connector<'a, T>>>,
+    a1: Weak<RefCell<Connector<'a, T>>>,
+    a2: Weak<RefCell<Connector<'a, T>>>,
+    sum: Weak<RefCell<Connector<'a, T>>>,
 }
 
 impl<'a, T> Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output=T> + Copy + Display + PartialEq + 'a {
     pub fn new(a1: Rc<RefCell<Connector<'a, T>>>, a2: Rc<RefCell<Connector<'a, T>>>, sum: Rc<RefCell<Connector<'a, T>>>) -> Rc<RefCell<Self>> {
         let this = Rc::new(RefCell::new(Self {
-            a1: Rc::clone(&a1),
-            a2: Rc::clone(&a2),
-            sum: Rc::clone(&sum),
+            a1: Rc::downgrade(&a1),
+            a2: Rc::downgrade(&a2),
+            sum: Rc::downgrade(&sum),
         }));
         let _ = a1.borrow_mut().connect(Rc::clone(&this) as _);
         let _ = a2.borrow_mut().connect(Rc::clone(&this) as _);
@@ -35,23 +35,26 @@ impl<'a, T> Propagate for Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output
     }
 
     // need to rethink borrows; currently recursively borrowing, which is causing failures
-    fn update(&mut self) {
-        let Ok(mut a1) = self.a1.try_borrow_mut() else {
-            eprintln!("Could not borrow a1 in update");
+    fn update(&self) {
+        let Some(a1) = self.a1.upgrade() else {
+            eprintln!("a1 not present");
             return;
         };
-        let Ok(mut a2) = self.a2.try_borrow_mut() else {
-            eprintln!("Could not borrow a2 in update");
+        let Some(a2) = self.a2.upgrade() else {
+            eprintln!("a2 not present");
             return;
         };
-        let Ok(mut sum) = self.sum.try_borrow_mut() else {
-            eprintln!("Could not borrow sum in update");
+        let Some(sum) = self.sum.upgrade() else {
+            eprintln!("sum not present");
             return;
         };
-        let result = match (a1.get_value(), a2.get_value(), sum.get_value()) {
-            (Some(v1), Some(v2), None) => sum.set_value(v1 + v2, self.id()),
-            (Some(v1), None, Some(total)) => a2.set_value(total - v1, self.id()),
-            (None, Some(v2), Some(total)) => a1.set_value(total - v2, self.id()),
+        let a1_value = a1.borrow().get_value();
+        let a2_value = a2.borrow().get_value();
+        let sum_value = sum.borrow().get_value();
+        let result = match (a1_value, a2_value, sum_value) {
+            (Some(v1), Some(v2), None) => sum.borrow().set_value(v1 + v2, self.id()),
+            (Some(v1), None, Some(total)) => a2.borrow().set_value(total - v1, self.id()),
+            (None, Some(v2), Some(total)) => a1.borrow().set_value(total - v2, self.id()),
             (..) => Ok(()),
         };
         if let Err(msg) = result {
@@ -59,15 +62,21 @@ impl<'a, T> Propagate for Adder<'a, T> where T: Add<T, Output=T> + Sub<T, Output
         }
     }
 
-    fn forget(&mut self) {
-        if self.a1.try_borrow_mut().map(|mut c| c.forget_value(self.id())).is_err() {
-            eprintln!("Could not borrow a1 in forget");
+    fn forget(&self) {
+        if let Some(a1) = self.a1.upgrade() {
+            a1.borrow().forget_value(self.id());
+        } else {
+            eprintln!("a1 not present");
         }
-        if self.a2.try_borrow_mut().map(|mut c| c.forget_value(self.id())).is_err() {
-            eprintln!("Could not borrow a2 in forget");
+        if let Some(a2) = self.a2.upgrade() {
+            a2.borrow().forget_value(self.id());
+        } else {
+            eprintln!("a2 not present");
         }
-        if self.sum.try_borrow_mut().map(|mut c| c.forget_value(self.id())).is_err() {
-            eprintln!("Could not borrow sum in forget");
+        if let Some(sum) = self.sum.upgrade() {
+            sum.borrow().forget_value(self.id());
+        } else {
+            eprintln!("sum not present");
         }
     }
 }

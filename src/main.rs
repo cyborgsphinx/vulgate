@@ -10,7 +10,7 @@ fn main() {
 
     let _formula = Adder::new(Rc::clone(&mx), Rc::clone(&b), Rc::clone(&y));
 
-    let _ = y.borrow_mut().set_value(10, 0);
-    let _ = b.borrow_mut().set_value(4, 0);
-    assert!(mx.borrow().get_value().is_some()); // currently panics
+    let _ = y.borrow().set_value(10, 0);
+    let _ = b.borrow().set_value(4, 0);
+    println!("mx = {}", mx.borrow().get_value().unwrap()); // currently panics
 }
